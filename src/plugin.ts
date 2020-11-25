@@ -1,6 +1,6 @@
 import {existsSync, readFileSync} from 'fs';
 import {sync as glob} from 'glob';
-import {join, normalize} from 'path';
+import {join, normalize, dirname} from 'path';
 import {BindOption, ReflectionFlag, ReflectionKind, DeclarationReflection} from 'typedoc';
 import {Component, ConverterComponent} from 'typedoc/dist/lib/converter/components';
 import {Context} from 'typedoc/dist/lib/converter/context';
@@ -32,13 +32,14 @@ export class LernaPackagesPlugin extends ConverterComponent {
     }
 
     private getLernaPackages() {
+        const rootDir = dirname(this.lernaConfigPath);
         const lernaConfig = JSON.parse(readFileSync(this.lernaConfigPath, 'utf8'));
         let packages: string[] = [];
 
         if (lernaConfig.packages) {
             packages = lernaConfig.packages;
         } else if (lernaConfig.useWorkspaces) {
-            const packageJson = JSON.parse(readFileSync(join(this.lernaConfigPath, '../package.json'), 'utf8'));
+            const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf8'));
             packages = packageJson.workspaces.packages || packageJson.workspaces;
         }
 
@@ -48,7 +49,8 @@ export class LernaPackagesPlugin extends ConverterComponent {
 
         for (const packageGlob of packages) {
             const thisPkgs = glob(packageGlob, {
-                ignore: ['node_modules']
+                ignore: ['node_modules'],
+                cwd: rootDir
             });
 
             for (const pkg of thisPkgs) {
