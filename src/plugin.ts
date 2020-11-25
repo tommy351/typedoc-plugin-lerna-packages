@@ -31,15 +31,18 @@ export class LernaPackagesPlugin extends ConverterComponent {
         });
     }
 
+    private getRootDir() {
+        return dirname(this.lernaConfigPath);
+    }
+
     private getLernaPackages() {
-        const rootDir = dirname(this.lernaConfigPath);
         const lernaConfig = JSON.parse(readFileSync(this.lernaConfigPath, 'utf8'));
         let packages: string[] = [];
 
         if (lernaConfig.packages) {
             packages = lernaConfig.packages;
         } else if (lernaConfig.useWorkspaces) {
-            const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf8'));
+            const packageJson = JSON.parse(readFileSync(join(this.getRootDir(), 'package.json'), 'utf8'));
             packages = packageJson.workspaces.packages || packageJson.workspaces;
         }
 
@@ -50,7 +53,8 @@ export class LernaPackagesPlugin extends ConverterComponent {
         for (const packageGlob of packages) {
             const thisPkgs = glob(packageGlob, {
                 ignore: ['node_modules'],
-                cwd: rootDir
+                cwd: this.getRootDir(),
+                absolute: true
             });
 
             for (const pkg of thisPkgs) {
@@ -78,15 +82,13 @@ export class LernaPackagesPlugin extends ConverterComponent {
 
         const copyChildren = context.project.children.slice(0);
 
-        const cwd = process.cwd();
-
         const findLernaPackageForChildOriginalName = (path: string): string => {
             let fit = '';
             for (const i in this.lernaPackages) {
                 if (!this.lernaPackages.hasOwnProperty(i)) continue;
 
                 // normalize uses backslashes on Windows.
-                const packagePath = normalize(join(cwd, this.lernaPackages[i]) + '/').replace(/\\/g, '/');
+                const packagePath = normalize(this.lernaPackages[i] + '/').replace(/\\/g, '/');
                 if (normalize(path + '/').replace(/\\/g, '/').includes(packagePath)) {
                     if (i.length > fit.length) {
                         fit = i;
@@ -104,7 +106,7 @@ export class LernaPackagesPlugin extends ConverterComponent {
         context.project.children.length = 0;
 
         for (const i in this.lernaPackages) {
-            const fullPath = join(cwd, this.lernaPackages[i]);
+            const fullPath = this.lernaPackages[i];
             const reflection = new DeclarationReflection(i, ReflectionKind.Module, context.project);
             if (reflection.id === 0) {
                 throw new Error('We got the wrong reference of Typedoc. Please install correctly and dedupe if necessary.');
