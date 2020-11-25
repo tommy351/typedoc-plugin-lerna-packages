@@ -18,12 +18,15 @@ export class LernaPackagesPlugin extends ConverterComponent {
     @BindOption('pathExclude')
     pathExclude!: string[];
 
+    @BindOption('lernaConfigPath')
+    lernaConfigPath!: string;
+
     private lernaPackages: { [name: string]: string } = {};
 
     constructor(owner: Converter) {
         super(owner);
 
-        const lernaConfig = JSON.parse(readFileSync('lerna.json', 'utf8'));
+        const lernaConfig = JSON.parse(readFileSync(this.lernaConfigPath, 'utf8'));
         let packages: string[] = [];
         if (lernaConfig.packages) {
             packages = lernaConfig.packages;

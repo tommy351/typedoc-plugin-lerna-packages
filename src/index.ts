@@ -18,5 +18,12 @@ export function load(PluginHost: PluginHost) {
         defaultValue: []
     });
 
+    app.options.addDeclaration({
+        name: 'lernaConfigPath',
+        help: 'Path of lerna.json',
+        type: ParameterType.String,
+        defaultValue: 'lerna.json'
+    });
+
     app.converter.addComponent('lerna-packages', LernaPackagesPlugin);
 }
