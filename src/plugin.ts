@@ -26,12 +26,19 @@ export class LernaPackagesPlugin extends ConverterComponent {
     constructor(owner: Converter) {
         super(owner);
 
+        this.listenTo(this.owner, {
+            [Converter.EVENT_RESOLVE_BEGIN]: this.onBeginResolve.bind(this)
+        });
+    }
+
+    private getLernaPackages() {
         const lernaConfig = JSON.parse(readFileSync(this.lernaConfigPath, 'utf8'));
         let packages: string[] = [];
+
         if (lernaConfig.packages) {
             packages = lernaConfig.packages;
         } else if (lernaConfig.useWorkspaces) {
-            const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+            const packageJson = JSON.parse(readFileSync(join(this.lernaConfigPath, '../package.json'), 'utf8'));
             packages = packageJson.workspaces.packages || packageJson.workspaces;
         }
 
@@ -51,10 +58,6 @@ export class LernaPackagesPlugin extends ConverterComponent {
                 }
             }
         }
-
-        this.listenTo(this.owner, {
-            [Converter.EVENT_RESOLVE_BEGIN]: this.onBeginResolve.bind(this)
-        });
     }
 
     /**
@@ -63,6 +66,8 @@ export class LernaPackagesPlugin extends ConverterComponent {
      * @param context  The context object describing the current state the converter is in.
      */
     private onBeginResolve(context: Context) {
+        this.getLernaPackages();
+
         console.log('Lerna packages found', this.lernaPackages);
         const lernaPackageModules: { [lernaPackageName: string]: DeclarationReflection } = {};
 
